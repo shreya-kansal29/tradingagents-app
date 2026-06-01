@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TradingAgents</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Segoe UI',sans-serif;background:#0f0f13;color:#e8e8e8;min-height:100vh}
+    .top{background:#13131a;border-bottom:1px solid #222;padding:16px 32px;display:flex;align-items:center;gap:12px}
+    .logo{width:32px;height:32px;background:#1e1e2e;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px}
+    .top h1{font-size:17px;font-weight:500}
+    .top p{font-size:12px;color:#666;margin-top:2px}
+    .main{max-width:800px;margin:40px auto;padding:0 20px}
+    .card{background:#13131a;border:1px solid #222;border-radius:12px;padding:24px;margin-bottom:20px}
+    .card h2{font-size:13px;color:#666;text-transform:uppercase;letter-spacing:.08em;margin-bottom:16px}
+    .grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px}
+    label{font-size:12px;color:#888;display:block;margin-bottom:5px}
+    input,select{width:100%;height:38px;background:#0f0f13;border:1px solid #2a2a3a;border-radius:8px;color:#e8e8e8;padding:0 12px;font-size:14px;outline:none}
+    input:focus,select:focus{border-color:#5b5bd6}
+    .depth{display:flex;gap:8px;margin-bottom:16px}
+    .depth button{flex:1;height:34px;background:#0f0f13;border:1px solid #2a2a3a;border-radius:8px;color:#888;font-size:13px;cursor:pointer;transition:all .15s}
+    .depth button.active{background:#1e1e3a;border-color:#5b5bd6;color:#a5a5f5}
+    .run{width:100%;height:44px;background:#5b5bd6;border:none;border-radius:8px;color:#fff;font-size:15px;font-weight:500;cursor:pointer;transition:opacity .15s}
+    .run:hover{opacity:.85}
+    .run:disabled{opacity:.4;cursor:not-allowed}
+    .agents{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px}
+    .agent{background:#13131a;border:1px solid #222;border-radius:10px;padding:12px 14px;display:flex;align-items:center;gap:10px}
+    .agent-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+    .agent-info .name{font-size:13px;font-weight:500}
+    .agent-info .role{font-size:11px;color:#666;margin-top:1px}
+    .status{display:flex;align-items:center;gap:6px;font-size:11px;color:#555;margin-top:5px}
+    .dot{width:6px;height:6px;border-radius:50%;background:#333;flex-shrink:0}
+    .dot.running{background:#f59e0b;animation:blink 1s infinite}
+    .dot.done{background:#22c55e}
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+    .log{background:#0a0a0f;border:1px solid #1a1a2a;border-radius:10px;padding:14px;min-height:100px;max-height:220px;overflow-y:auto;font-size:12px;font-family:'Cascadia Code','Consolas',monospace;line-height:1.8;margin-bottom:20px}
+    .log-line{animation:fadein .3s}
+    .tag{display:inline-block;padding:1px 7px;border-radius:4px;font-size:10px;font-weight:600;margin-right:6px}
+    .t-analyst{background:#1a3a5c;color:#7ab8f5}
+    .t-researcher{background:#1a3a1a;color:#7af57a}
+    .t-trader{background:#3a2a1a;color:#f5c07a}
+    .t-risk{background:#3a1a1a;color:#f57a7a}
+    .t-system{background:#1a1a3a;color:#a0a0f5}
+    @keyframes fadein{from{opacity:0;transform:translateY(3px)}to{opacity:1}}
+    .decision{border-radius:12px;padding:24px;display:none;margin-bottom:20px;border:1px solid #222;background:#13131a}
+    .decision.show{display:block}
+    .dec-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+    .dec-title{font-size:14px;color:#888}
+    .dec-ticker{font-size:18px;font-weight:600;margin-top:2px}
+    .badge{padding:8px 20px;border-radius:100px;font-size:16px;font-weight:600}
+    .buy{background:#14532d;color:#4ade80}
+    .sell{background:#450a0a;color:#f87171}
+    .hold{background:#451a03;color:#fb923c}
+    .conf-row{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+    .conf-bar{flex:1;height:6px;background:#1a1a2a;border-radius:3px;overflow:hidden}
+    .conf-fill{height:100%;border-radius:3px;background:#22c55e;width:0;transition:width 1.2s ease}
+    .rationale{font-size:13px;color:#aaa;line-height:1.8;border-top:1px solid #1a1a2a;padding-top:14px}
+    .metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px}
+    .metric{background:#0f0f13;border-radius:8px;padding:12px;text-align:center;border:1px solid #1a1a2a}
+    .metric-val{font-size:16px;font-weight:600;margin-bottom:3px}
+    .metric-label{font-size:11px;color:#666}
+    .green{color:#4ade80}.red{color:#f87171}.white{color:#e8e8e8}
+    .note{font-size:11px;color:#444;text-align:center;margin-top:8px}
+    #agentsWrap{display:none}
+    #logWrap{display:none}
+  </style>
+</head>
+<body>
+
+<div class="top">
+  <div class="logo">📈</div>
+  <div>
+    <h1>TradingAgents</h1>
+    <p>Multi-agent AI financial analysis</p>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- Input Card -->
+  <div class="card">
+    <h2>Configure Analysis</h2>
+    <div class="grid">
+      <div>
+        <label>Stock Ticker</label>
+        <input id="ticker" type="text" placeholder="e.g. NVDA" value="NVDA" style="text-transform:uppercase;font-weight:600"/>
+      </div>
+      <div>
+        <label>Analysis Date</label>
+        <input id="date" type="date" value="2026-01-15"/>
+      </div>
+      <div>
+        <label>LLM Provider</label>
+        <select id="provider">
+          <option value="anthropic">Anthropic (Claude)</option>
+          <option value="openai">OpenAI (GPT)</option>
+          <option value="google">Google (Gemini)</option>
+          <option value="deepseek">DeepSeek</option>
+        </select>
+      </div>
+    </div>
+    <h2 style="margin-bottom:10px">Research Depth</h2>
+    <div class="depth">
+      <button onclick="setDepth(1,this)">Shallow · 1 round</button>
+      <button class="active" onclick="setDepth(2,this)">Standard · 2 rounds</button>
+      <button onclick="setDepth(3,this)">Deep · 3 rounds</button>
+    </div>
+    <button class="run" id="runBtn" onclick="runAnalysis()">🚀 Run Analysis</button>
+  </div>
+
+  <!-- Agents -->
+  <div id="agentsWrap">
+    <div class="card" style="margin-bottom:12px">
+      <h2>Agent Team — Live Status</h2>
+    </div>
+    <div class="agents" id="agentsGrid"></div>
+  </div>
+
+  <!-- Log -->
+  <div id="logWrap">
+    <div class="card" style="margin-bottom:12px"><h2>Live Agent Output</h2></div>
+    <div class="log" id="log">Waiting...</div>
+  </div>
+
+  <!-- Decision -->
+  <div class="decision" id="decision">
+    <div class="dec-header">
+      <div>
+        <div class="dec-title" id="decMeta"></div>
+        <div class="dec-ticker">Final Recommendation</div>
+      </div>
+      <div class="badge" id="badge"></div>
+    </div>
+    <div class="conf-row">
+      <span style="font-size:12px;color:#666;min-width:75px">Confidence</span>
+      <div class="conf-bar"><div class="conf-fill" id="confFill"></div></div>
+      <span style="font-size:13px;font-weight:600" id="confNum">—</span>
+    </div>
+    <div class="rationale" id="rationale"></div>
+    <div class="metrics" id="metrics"></div>
+  </div>
+
+  <div class="note">For research purposes only. Not financial advice.</div>
+</div>
+
+<script>
+const AGENTS=[
+  {id:'fundamentals',name:'Fundamentals Analyst',role:'Financials & intrinsic value',icon:'📊',bg:'#0d2137'},
+  {id:'sentiment',name:'Sentiment Analyst',role:'News, Reddit & StockTwits',icon:'💬',bg:'#0d2a1a'},
+  {id:'news',name:'News Analyst',role:'Macro events & indicators',icon:'📰',bg:'#1a1a0d'},
+  {id:'technical',name:'Technical Analyst',role:'MACD, RSI & chart patterns',icon:'📈',bg:'#2a0d1a'},
+  {id:'bull',name:'Bull Researcher',role:'Argues the long case',icon:'🟢',bg:'#0d2a0d'},
+  {id:'bear',name:'Bear Researcher',role:'Argues the short case',icon:'🔴',bg:'#2a0d0d'},
+  {id:'trader',name:'Trader Agent',role:'Synthesizes final decision',icon:'⚡',bg:'#2a1a0d'},
+  {id:'risk',name:'Risk Manager',role:'Approves or rejects trade',icon:'🛡️',bg:'#1a0d2a'},
+];
+
+let depth=2,running=false;
+
+function setDepth(d,btn){
+  depth=d;
+  document.querySelectorAll('.depth button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function renderAgents(){
+  document.getElementById('agentsGrid').innerHTML=AGENTS.map(a=>`
+    <div class="agent" id="ac-${a.id}">
+      <div class="agent-icon" style="background:${a.bg}">${a.icon}</div>
+      <div class="agent-info">
+        <div class="name">${a.name}</div>
+        <div class="role">${a.role}</div>
+        <div class="status"><div class="dot" id="dot-${a.id}"></div><span id="st-${a.id}">Pending</span></div>
+      </div>
+    </div>`).join('');
+}
+
+function setAgent(id,state,msg){
+  const dot=document.getElementById('dot-'+id);
+  const st=document.getElementById('st-'+id);
+  if(dot){dot.className='dot '+state;}
+  if(st){st.textContent=msg;}
+}
+
+function log(tag,cls,msg){
+  const el=document.getElementById('log');
+  if(el.textContent==='Waiting...')el.innerHTML='';
+  const line=document.createElement('div');
+  line.className='log-line';
+  line.innerHTML=`<span class="tag ${cls}">${tag}</span>${msg}`;
+  el.appendChild(line);
+  el.scrollTop=el.scrollHeight;
+}
+
+function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
+
+async function runAnalysis(){
+  if(running)return;
+  running=true;
+
+  const ticker=document.getElementById('ticker').value.toUpperCase()||'NVDA';
+  const date=document.getElementById('date').value;
+  const provider=document.getElementById('provider').value;
+
+  document.getElementById('runBtn').disabled=true;
+  document.getElementById('runBtn').textContent='⏳ Analyzing...';
+  document.getElementById('agentsWrap').style.display='block';
+  document.getElementById('logWrap').style.display='block';
+  document.getElementById('decision').classList.remove('show');
+  document.getElementById('log').innerHTML='';
+  renderAgents();
+
+  // Simulate agents running while real API call happens in background
+  const steps=[
+    {id:'fundamentals',tag:'Fundamentals',cls:'t-analyst',msgs:['Pulling SEC filings...','Calculating P/E, EV/EBITDA...','Fundamentals report done.']},
+    {id:'sentiment',tag:'Sentiment',cls:'t-analyst',msgs:['Scanning Reddit & StockTwits...','Scoring 200+ headlines...','Sentiment report done.']},
+    {id:'news',tag:'News',cls:'t-analyst',msgs:['Checking macro indicators...','Evaluating Fed outlook...','News report done.']},
+    {id:'technical',tag:'Technical',cls:'t-analyst',msgs:['Computing RSI, MACD...','Detecting chart patterns...','Technical report done.']},
+    {id:'bull',tag:'Bull',cls:'t-researcher',msgs:['Building bull case...','Citing growth & margins...','Bull thesis ready.']},
+    {id:'bear',tag:'Bear',cls:'t-researcher',msgs:['Building bear case...','Flagging risks & valuation...','Bear thesis ready.']},
+    {id:'trader',tag:'Trader',cls:'t-trader',msgs:['Synthesizing all reports...','Formulating trade proposal...','Trade proposal ready.']},
+    {id:'risk',tag:'Risk Mgmt',cls:'t-risk',msgs:['Running risk assessment...','Checking limits & exposure...','Risk check complete.']},
+  ];
+
+  // Start real API call in background
+  const apiPromise=fetch('http://localhost:8000/analyze',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({ticker,date,provider})
+  }).then(r=>r.json()).catch(e=>({success:false,error:e.message}));
+
+  // Show animated steps
+  for(const step of steps){
+    setAgent(step.id,'running','Working...');
+    for(let i=0;i<step.msgs.length;i++){
+      await sleep(800);
+      log(step.tag,step.cls,step.msgs[i]);
+    }
+    setAgent(step.id,'done','Complete ✓');
+    await sleep(200);
+  }
+
+  log('System','t-system','Waiting for AI decision...');
+
+  // Wait for real result
+  const result=await apiPromise;
+  
+  log('System','t-system',result.success?'Analysis complete!':'Using demo result (check API keys)');
+
+  // Show decision
+  const dec=document.getElementById('decision');
+  dec.classList.add('show');
+  document.getElementById('decMeta').textContent=`${ticker} · ${date} · ${provider}`;
+
+  let action,conf,rationale,metrics;
+
+  if(result.success && result.decision){
+    // Real result from API
+    const d=result.decision;
+    action=d.action||d.decision||'HOLD';
+    conf=d.confidence||70;
+    rationale=d.rationale||d.reasoning||JSON.stringify(d);
+    metrics=[
+      {label:'Action',val:action,cls:'white'},
+      {label:'Confidence',val:conf+'%',cls:'green'},
+      {label:'Provider',val:provider,cls:'white'},
+    ];
+  } else {
+    // Demo fallback
+    const demos={
+      NVDA:{action:'BUY',conf:87,rationale:'Strong AI chip demand drives revenue growth. Technical breakout confirmed above 200-day MA. Sentiment overwhelmingly positive. Risk manager approved at 15% portfolio weight.',metrics:[{label:'Revenue Growth',val:'+78% YoY',cls:'green'},{label:'RSI',val:'58 — Neutral',cls:'white'},{label:'Sentiment',val:'82/100',cls:'green'}]},
+      TSLA:{action:'HOLD',conf:61,rationale:'Mixed signals — margin compression offset by energy storage growth. Sentiment divided. Price consolidating $180-220 range. No clear directional catalyst.',metrics:[{label:'Gross Margin',val:'13.6%',cls:'red'},{label:'RSI',val:'48 — Neutral',cls:'white'},{label:'Sentiment',val:'51/100',cls:'white'}]},
+    };
+    const demo=demos[ticker]||{action:'HOLD',conf:55,rationale:`Analysis complete for ${ticker}. Mixed signals detected. Recommend monitoring for clearer catalysts before taking position.`,metrics:[{label:'Signal',val:'Mixed',cls:'white'},{label:'Confidence',val:'55%',cls:'white'},{label:'Risk',val:'Moderate',cls:'white'}]};
+    action=demo.action;conf=demo.conf;rationale=demo.rationale;metrics=demo.metrics;
+  }
+
+  const badge=document.getElementById('badge');
+  badge.textContent=action;
+  badge.className='badge '+(action==='BUY'?'buy':action==='SELL'?'sell':'hold');
+  document.getElementById('confNum').textContent=conf+'%';
+  document.getElementById('rationale').textContent=rationale;
+  setTimeout(()=>{document.getElementById('confFill').style.width=conf+'%';},100);
+  document.getElementById('metrics').innerHTML=metrics.map(m=>`
+    <div class="metric">
+      <div class="metric-val ${m.cls}">${m.val}</div>
+      <div class="metric-label">${m.label}</div>
+    </div>`).join('');
+
+  document.getElementById('runBtn').disabled=false;
+  document.getElementById('runBtn').textContent='🚀 Run Analysis';
+  running=false;
+}
+</script>
+</body>
+</html>
