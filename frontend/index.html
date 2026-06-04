@@ -224,7 +224,7 @@ async function runAnalysis(){
   ];
 
   // Start real API call in background
-  const apiPromise=fetch('http://localhost:8000/analyze',{
+  const apiPromise=fetch('https://tradingagents-backend-hyk0.onrender.com/analyze',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
     body:JSON.stringify({ticker,date,provider})
